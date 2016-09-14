@@ -46,10 +46,13 @@ namespace IdentityManager.Api.Models
     {
         static RoleQueryResultResourceData()
         {
-            AutoMapper.Mapper.CreateMap<QueryResult<RoleSummary>, RoleQueryResultResourceData>()
-                .ForMember(x => x.Items, opts => opts.MapFrom(x => x.Items));
-            AutoMapper.Mapper.CreateMap<RoleSummary, RoleResultResource>()
-                .ForMember(x => x.Data, opts => opts.MapFrom(x => x));
+	        AutoMapper.Mapper.Initialize(c =>
+	        {
+		        c.CreateMap<QueryResult<RoleSummary>, RoleQueryResultResourceData>()
+			        .ForMember(x => x.Items, opts => opts.MapFrom(x => x.Items));
+		        c.CreateMap<RoleSummary, RoleResultResource>()
+			        .ForMember(x => x.Data, opts => opts.MapFrom(x => x));
+	        });
         }
 
         public RoleQueryResultResourceData(QueryResult<RoleSummary> result, UrlHelper url, RoleMetadata meta)

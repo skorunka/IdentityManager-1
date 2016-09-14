@@ -1,1 +1,1 @@
-nuget push distribution\*.nupkg
+.\source\.nuget\nuget push distribution\*.nupkg

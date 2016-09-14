@@ -46,10 +46,13 @@ namespace IdentityManager.Api.Models
     {
         static UserQueryResultResourceData()
         {
-            AutoMapper.Mapper.CreateMap<QueryResult<UserSummary>, UserQueryResultResourceData>()
-                .ForMember(x => x.Items, opts => opts.MapFrom(x => x.Items));
-            AutoMapper.Mapper.CreateMap<UserSummary, UserResultResource>()
-                .ForMember(x => x.Data, opts => opts.MapFrom(x => x));
+	        AutoMapper.Mapper.Initialize(c =>
+	        {
+		        c.CreateMap<QueryResult<UserSummary>, UserQueryResultResourceData>()
+			        .ForMember(x => x.Items, opts => opts.MapFrom(x => x.Items));
+		        c.CreateMap<UserSummary, UserResultResource>()
+			        .ForMember(x => x.Data, opts => opts.MapFrom(x => x));
+	        });
         }
 
         public UserQueryResultResourceData(QueryResult<UserSummary> result, UrlHelper url, UserMetadata meta)
