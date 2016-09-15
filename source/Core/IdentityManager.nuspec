@@ -1,16 +1,16 @@
 <?xml version="1.0"?>
 <package >
   <metadata>
-    <id>IdentityManager</id>
+    <id>TaxiGunIdentityManager</id>
     <version>0.0.0</version>
-    <title>IdentityManager</title>
-    <authors>Brock Allen, Dominick Baier</authors>
-    <owners>Brock Allen, Dominick Baier</owners>
+    <title>TaxiGun IdentityManager</title>
+    <authors>Brock Allen, Dominick Baier, Frantisek Skorunka</authors>
+    <owners>Brock Allen, Dominick Baier, Frantisek Skorunka</owners>
     <projectUrl>https://github.com/IdentityManager/IdentityManager</projectUrl>
     <iconUrl>https://identityserver.github.io/Documentation/assets/images/icons/IDmanager_icon144.jpg</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>IdentityManager is an user management tool for MembershipReboot and ASP.NET Identity.</description>
-    <copyright>Copyright 2015</copyright>
+    <copyright>Copyright 2016</copyright>
     <tags>IdentityManager Identity</tags>
     <dependencies>
       <dependency id="Owin" version="1.0"/>

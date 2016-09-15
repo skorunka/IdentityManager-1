@@ -5,13 +5,13 @@ properties {
 	$dist_directory = "$base_directory\distribution"
 	$sln_file = "$src_directory\TaxiGun.IdentityManager.sln"
 	$target_config = "Release"
-	$framework_version = "v4.5"
+	$framework_version = "v4.6"
 	$xunit_path = "$src_directory\packages\xunit.runners.1.9.2\tools\xunit.console.clr4.exe"
 	$ilmerge_path = "$src_directory\packages\ilmerge.2.14.1208\tools\ILMerge.exe"
 	$nuget_path = "$src_directory\.nuget\nuget.exe"
 	
 	$buildNumber = 0;
-	$version = "1.0.0.0"
+	$version = "1.0.2.0"
 	$preRelease = $null
 }
 
@@ -25,7 +25,7 @@ task Clean {
 }
 
 task Compile -depends UpdateVersion {
-	exec { msbuild /nologo /verbosity:q $sln_file /p:Configuration=$target_config /p:TargetFrameworkVersion=v4.5 }
+	exec { msbuild /nologo /verbosity:q $sln_file /p:Configuration=$target_config /p:TargetFrameworkVersion=v4.6 }
 }
 
 task UpdateVersion {
@@ -58,8 +58,8 @@ task ILMerge -depends Compile {
 			}
 	}
 
-	New-Item $dist_directory\lib\net45 -Type Directory
-	Invoke-Expression "$ilmerge_path /targetplatform:v4 /internalize /allowDup /target:library /out:$dist_directory\lib\net45\IdentityManager.dll $input_dlls"
+	New-Item $dist_directory\lib\net46 -Type Directory
+	Invoke-Expression "$ilmerge_path /targetplatform:v4 /internalize /allowDup /target:library /out:$dist_directory\lib\net46\IdentityManager.dll $input_dlls"
 }
 
 task CreateNuGetPackage -depends ILMerge {

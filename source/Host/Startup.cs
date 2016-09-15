@@ -1,147 +1,96 @@
-﻿/*
- * Copyright 2014 Dominick Baier, Brock Allen
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-using Owin;
-using System.Collections;
+﻿using System;
 using System.Collections.Generic;
-using System.Security.Claims;
-using IdentityManager.Configuration;
-using IdentityManager.Core.Logging;
-using IdentityManager.Extensions;
-using IdentityManager.Host.IdSvr;
-using IdentityManager.Host.InMemoryService;
-using IdentityManager.Logging;
-using Microsoft.Owin.Logging;
-using Microsoft.Owin;
-using IdentityManager.Host;
 using System.Threading.Tasks;
-using System.IdentityModel.Tokens;
-using Microsoft.Owin.Security.Cookies;
+using IdentityManager;
+using IdentityManager.Configuration;
+using IdentityManager.Host.InMemoryService;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Owin.Builder;
+using Microsoft.Owin.BuilderProperties;
+using Owin;
 
-//[assembly: OwinStartup(typeof(StartupWithLocalhostSecurity))]
-[assembly: OwinStartup(typeof(StartupWithHostCookiesSecurity))]
-
-namespace IdentityManager.Host
+namespace Host
 {
-    public class StartupWithLocalhostSecurity
-    {
-        public void Configuration(IAppBuilder app)
-        {
-            LogProvider.SetCurrentLogProvider(new TraceSourceLogProvider());
+	public class Startup
+	{
+		public Startup(IHostingEnvironment env)
+		{
+			var builder = new ConfigurationBuilder()
+				.SetBasePath(env.ContentRootPath)
+				.AddJsonFile("appsettings.json", true, true)
+				.AddJsonFile($"appsettings.{env.EnvironmentName}.json", true)
+				.AddEnvironmentVariables();
 
-            // this configures IdentityManager
-            // we're using a Map just to test hosting not at the root
-            app.Map("/idm", idm =>
-            {
-                var factory = new IdentityManagerServiceFactory();
+			Configuration = builder.Build();
+		}
 
-                var rand = new System.Random();
-                var users = Users.Get(rand.Next(5000, 20000));
-                var roles = Roles.Get(rand.Next(15));
+		public IConfigurationRoot Configuration { get; }
 
-                factory.Register(new Registration<ICollection<InMemoryUser>>(users));
-                factory.Register(new Registration<ICollection<InMemoryRole>>(roles));
-                factory.IdentityManagerService = new Registration<IIdentityManagerService, InMemoryIdentityManagerService>();
+		// This method gets called by the runtime. Use this method to add services to the container.
+		// For more information on how to configure your application, visit http://go.microsoft.com/fwlink/?LinkID=398940
+		public void ConfigureServices(IServiceCollection services)
+		{
+		}
 
-                idm.UseIdentityManager(new IdentityManagerOptions
-                {
-                    Factory = factory,
-                });
-            });
-        }
-    }
+		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+		public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+		{
+			loggerFactory.AddConsole();
 
-    public class StartupWithHostCookiesSecurity
-    {
-        public void Configuration(IAppBuilder app)
-        {
-            LogProvider.SetCurrentLogProvider(new TraceSourceLogProvider());
+			app.UseIdentityManager();
+		}
+	}
 
-            JwtSecurityTokenHandler.InboundClaimTypeMap = new Dictionary<string, string>();
-            app.UseCookieAuthentication(new Microsoft.Owin.Security.Cookies.CookieAuthenticationOptions
-            {
-                AuthenticationType = "Cookies",
-            });
-            
-            app.UseOpenIdConnectAuthentication(new Microsoft.Owin.Security.OpenIdConnect.OpenIdConnectAuthenticationOptions
-            {
-                AuthenticationType = "oidc",
-                Authority = "https://localhost:44337/ids",
-                ClientId = "idmgr_client",
-                RedirectUri = "https://localhost:44337",
-                ResponseType = "id_token",
-                UseTokenLifetime = false,
-                Scope = "openid idmgr",
-                SignInAsAuthenticationType = "Cookies",
-                Notifications = new Microsoft.Owin.Security.OpenIdConnect.OpenIdConnectAuthenticationNotifications
-                {
-                    SecurityTokenValidated = n =>
-                    {
-                        n.AuthenticationTicket.Identity.AddClaim(new Claim("id_token", n.ProtocolMessage.IdToken));
-                        return Task.FromResult(0);
-                    },
-                    RedirectToIdentityProvider = async n =>
-                    {
-                        if (n.ProtocolMessage.RequestType == Microsoft.IdentityModel.Protocols.OpenIdConnectRequestType.LogoutRequest)
-                        {
-                            var result = await n.OwinContext.Authentication.AuthenticateAsync("Cookies");
-                            if (result != null)
-                            {
-                                var id_token = result.Identity.Claims.GetValue("id_token");
-                                if (id_token != null)
-                                {
-                                    n.ProtocolMessage.IdTokenHint = id_token;
-                                    n.ProtocolMessage.PostLogoutRedirectUri = "https://localhost:44337/idm";
-                                }
-                            }
-                        }
-                    }
-                }
-            });
+	internal static class Extensions
+	{
+		public static IApplicationBuilder UseIdentityManager(this IApplicationBuilder app)
+		{
+			var factory = new IdentityManagerServiceFactory();
 
-            app.Map("/idm", idm =>
-            {
-                var factory = new IdentityManagerServiceFactory();
+			var rand = new Random();
+			var users = Users.Get(rand.Next(5000, 20000));
+			var roles = Roles.Get(rand.Next(15));
 
-                var rand = new System.Random();
-                var users = Users.Get(rand.Next(5000, 20000));
-                var roles = Roles.Get(rand.Next(15));
+			factory.Register(new Registration<ICollection<InMemoryUser>>(users));
+			factory.Register(new Registration<ICollection<InMemoryRole>>(roles));
+			factory.IdentityManagerService = new Registration<IIdentityManagerService, InMemoryIdentityManagerService>();
 
-                factory.Register(new Registration<ICollection<InMemoryUser>>(users));
-                factory.Register(new Registration<ICollection<InMemoryRole>>(roles));
-                factory.IdentityManagerService = new Registration<IIdentityManagerService, InMemoryIdentityManagerService>();
+			var options = new IdentityManagerOptions
+			{
+				Factory = factory
+			};
 
-                idm.UseIdentityManager(new IdentityManagerOptions
-                {
-                    Factory = factory,
-                    SecurityConfiguration = new HostSecurityConfiguration
-                    {
-                        HostAuthenticationType = "Cookies",
-                        AdditionalSignOutType = "oidc"
-                    }
-                });
-            });
+			return app.UseOwinAppBuilder(builder => builder.UseIdentityManager(options));
+		}
 
-            // this configures an embedded IdentityServer to act as an external authentication provider
-            // when using IdentityManager in Token security mode. normally you'd configure this elsewhere.
-            app.Map("/ids", ids =>
-            {
-                IdSvrConfig.Configure(ids);
-            });
-        }
-    }
+		private static IApplicationBuilder UseOwinAppBuilder(this IApplicationBuilder app, Action<IAppBuilder> configuration)
+		{
+			if (app == null)
+				throw new ArgumentNullException(nameof(app));
 
+			if (configuration == null)
+				throw new ArgumentNullException(nameof(configuration));
+
+			return app.UseOwin(setup => setup(next =>
+			{
+				var builder = new AppBuilder();
+				var lifetime = (IApplicationLifetime) app.ApplicationServices.GetService(typeof(IApplicationLifetime));
+
+				// ReSharper disable once UseObjectOrCollectionInitializer
+				var properties = new AppProperties(builder.Properties);
+				properties.AppName = app.ApplicationServices.GetApplicationUniqueIdentifier();
+				properties.OnAppDisposing = lifetime.ApplicationStopping;
+				properties.DefaultApp = next;
+
+				configuration(builder);
+
+				return builder.Build<Func<IDictionary<string, object>, Task>>();
+			}));
+		}
+	}
 }

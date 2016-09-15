@@ -19,18 +19,17 @@ using System.ComponentModel.DataAnnotations;
 
 namespace IdentityManager.Host.InMemoryService
 {
-	public class InMemoryRole
-	{
-		public InMemoryRole()
-		{
-			ID = Guid.NewGuid().ToString();
-		}
+    public class InMemoryRole
+    {
+        public InMemoryRole()
+        {
+            ID = Guid.NewGuid().ToString();
+        }
 
-		public string ID { get; set; }
+        public string ID { get; set; }
 
-		[Required]
-		public string Name { get; set; }
-
-		public string Description { get; set; }
-	}
+        [Required]
+        public string Name { get; set; }
+        public string Description { get; set; }
+    }
 }
